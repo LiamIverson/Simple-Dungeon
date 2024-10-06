@@ -70,7 +70,7 @@ current_room = over_world[over_world_position]
 player_pos = [2, 2]
 
 
-player_stats = {"HP":0,"Strength":random.randint(3,18),"Dexterity":random.randint(3,18),"Intelligence":random.randint(3,18)}
+player_stats = {"HP":0,"Strength":random.randint(3,18),"Dexterity":random.randint(3,18),"Intelligence":random.randint(3,18), "Inventory":[]}
 
 player_stats['HP'] = player_stats['Strength'] * 3
 
@@ -80,24 +80,30 @@ tile_size = 50
 # Load images
 wall_tile = pygame.transform.scale(pygame.image.load("dungeon_wall.png"), (tile_size, tile_size))
 player_image = pygame.transform.scale(pygame.image.load("player.png"), (tile_size, tile_size))
+key_image = pygame.transform.scale(pygame.image.load("key.png"), (tile_size, tile_size))
+
+
 
 # Padding Constants
 x_padding = 50
 y_padding = 50
 
 
-goblin = {"image":pygame.image.load("goblin.png")}
+goblin = {"image":pygame.image.load("goblin.png"), 'health':20}
 
-wright = {"image":pygame.image.load("wright.png")}
+wright = {"image":pygame.image.load("wright.png"),'health':60}
 
 enemies_global = []
 
-enemies_global.append({"room":room_1,"x":3,"y":3, "enemy":goblin})
-enemies_global.append({"room":room_3,"x":3,"y":3, "enemy":wright})
+enemies_global.append({"room":room_1,"x":3,"y":3, "stats":goblin})
+enemies_global.append({"room":room_3,"x":3,"y":3, "stats":wright})
 
 door_tile = pygame.image.load("door.png")
 
-doors = [{'room':room_1,"x":2,"y":0,"locked":True,"check":12}]
+
+key = {"type":"key","image":key_image}
+
+doors = [{'room':room_1,"x":2,"y":0,"locked":True,"check":18,"key":key}]
 
 AI_Timer_Delay = 5000
 AI_Ticks = pygame.time.get_ticks()
@@ -108,6 +114,9 @@ pygame.font.init()
 font = pygame.font.Font(None, 36)  # You can change the font size if needed
 
 
+items = []
+
+items.append({'room':room_1,"x":6,"y":1,"stats":key})
 
 
 # Function to render player stats
@@ -123,7 +132,11 @@ def check_door(door):
     return door['locked']
 
 def unlock_door(door):
+    print(player_stats['Inventory'])
     if player_stats['Dexterity'] >= door['check']:
+        door['locked'] = False
+        #ADD logic to play sound effect here
+    if door['key'] in player_stats['Inventory']:
         door['locked'] = False
 
 def collision_detection(pos):
@@ -139,13 +152,35 @@ def collision_detection(pos):
 
 
 
+
+
+
+def is_in_melee_range(player_x, player_y, enemy_x, enemy_y):
+    # Check if the player is within 1 tile of the enemy (manhattan distance <= 1)
+    return abs(player_x - enemy_x) <= 1 and abs(player_y - enemy_y) <= 1
+
+def attack(player_x, player_y, enemy):
+    # Get enemy's position
+    enemy_x = enemy['x']
+    enemy_y = enemy['y']
+
+
+    if is_in_melee_range(player_x, player_y, enemy_x, enemy_y):
+        enemy['stats']['health'] -= 10  # Example: deal 10 damage
+        if enemy['stats']['health'] <= 0:
+            enemies_global.remove(enemy)
+        print(f"Attacked enemy! Enemy's health is now {enemy['stats']['health']}")
+    else:
+        print("Enemy is out of melee range!")
+
+
 # Render enemies in the current room
 def render_enemies():
     for enemy in enemies_global:
         if enemy["room"] == current_room:  # Only render enemies in the current room
             enemy_pixel_x = enemy["x"] * tile_size + x_padding
             enemy_pixel_y = enemy["y"] * tile_size + y_padding
-            screen.blit(enemy["enemy"]["image"], (enemy_pixel_x, enemy_pixel_y))
+            screen.blit(enemy["stats"]["image"], (enemy_pixel_x, enemy_pixel_y))
 
 
 
@@ -173,9 +208,18 @@ def render_map():
         elif current_room[i] == 2:
             screen.blit(door_tile, (x + x_padding, y + y_padding))
 
+
     player_pixel_x = player_pos[0] * tile_size + x_padding
     player_pixel_y = player_pos[1] * tile_size + y_padding
     screen.blit(player_image, (player_pixel_x, player_pixel_y))
+
+
+def render_items():
+    for item in items:
+        if item['room'] == current_room:
+            item_x = item['x'] * tile_size + x_padding
+            item_y = item['y'] * tile_size + y_padding
+            screen.blit(item['stats']['image'],(item_x,item_y))
 
 
 def screen_transition(direction):
@@ -226,13 +270,20 @@ def check_mouse_collision_detection(pos):
         if enemy['room'] == current_room:
             if x == enemy['x']:
                 if y == enemy['y']:
-                    print('enemy')
+                    attack(player_pos[0], player_pos[1], enemy)
 
     for door in doors:
         if door['room'] == current_room:
             if x == door['x']:
                 if y == door['y']:
                     unlock_door(door)
+    for item in items:
+        if item['room'] == current_room:
+            if x == item['x']:
+                if y == item['y']:
+                    if is_in_melee_range(player_pos[0],player_pos[1],item['x'],item['y']):
+                        player_stats['Inventory'].append(item['stats'])
+                        items.remove(item)
 
 
 
@@ -241,10 +292,12 @@ def check_enemy_collisions():
         if enemy['room'] == current_room:
             if enemy['x'] == player_pos[0] and enemy['y'] == player_pos[1]:
                 print("enemy collision")
-                if enemy['enemy'] == goblin:
+                if enemy['stats'] == goblin:
                     player_stats['HP'] -= random.randint(3,5)
-                if enemy['enemy'] == wright:
+                if enemy['stats'] == wright:
                     player_stats['HP'] -= random.randint(10,15)
+
+
 
 
 
@@ -290,8 +343,8 @@ def reset_game():
     player_stats['HP'] = player_stats['Strength'] * 3
     current_room = over_world[over_world_position]
     enemies_global = []  # Reset enemies as needed
-    enemies_global.append({"room": room_1, "x": 3, "y": 3, "enemy": goblin})
-    enemies_global.append({"room":room_3,"x":3,"y":3, "enemy":wright})
+    enemies_global.append({"room": room_1, "x": 3, "y": 3, "stats": goblin})
+    enemies_global.append({"room":room_3,"x":3,"y":3, "stats":wright})
 
 
 
@@ -365,11 +418,11 @@ while running:
     # Render the map
     if player_stats['HP'] >= 0:
         if pygame.time.get_ticks() - Enemy_Collision_Ticks >= 500:
-            print('test')
             check_enemy_collisions()
             Enemy_Collision_Ticks = pygame.time.get_ticks()
         render_map()
         render_enemies()
+        render_items()
         render_player_stats()
     else:
         render_game_over()
