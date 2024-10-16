@@ -1,0 +1,6 @@
+-Add punch sound effect
+-Add enemy attack sound effect
+-Add custom AI for enemies
+-Add projectiles
+
+

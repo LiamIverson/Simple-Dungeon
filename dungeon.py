@@ -1,9 +1,19 @@
 import pygame, random, math
+from pygame import *
+from crt_shader import Graphic_engine
+from settings import *
 
 pygame.init()
 
 # Screen settings
-screen = pygame.display.set_mode([600, 600])
+#screen = pygame.display.set_mode([600, 600])
+
+
+screen = pygame.Surface(VIRTUAL_RES).convert((255, 65282, 16711681, 0))
+# you need to give your display OPENGL flag to blit screen using OPENGL
+pygame.display.set_mode(REAL_RES, DOUBLEBUF|OPENGL)
+# init shader class
+crt_shader =  Graphic_engine(screen)
 
 # Define colors (for the example)
 WHITE = (255, 255, 255)
@@ -71,11 +81,23 @@ room_5 = [
     0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
 ]
 
+room_6 = [
+    0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
+    1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+    1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 1, 1, 0, 1, 0,
+]
+
 over_world = [
     "empty", room_2, "empty", "empty",
     "empty", room_1, room_3, "empty",
     "empty", room_5, room_4, "empty",
-    "empty", "empty", "empty", "empty",
+    "empty", "empty", room_6, "empty",
 ]
 
 
@@ -109,6 +131,9 @@ player_image = pygame.transform.scale(pygame.image.load("player.png"), (tile_siz
 key_image = pygame.transform.scale(pygame.image.load("key.png"), (tile_size, tile_size))
 sword_image = pygame.transform.scale(pygame.image.load("sword.png"), (tile_size, tile_size))
 sword_image_m = pygame.transform.scale(pygame.image.load("sword_mithril.png"), (tile_size, tile_size))
+bolt_image = pygame.transform.scale(pygame.image.load("bolt.png"),(tile_size, tile_size))
+magic_bolt_image = pygame.transform.scale(pygame.image.load("magic_bolt.png"),(tile_size, tile_size))
+
 
 # Padding Constants
 x_padding = 50
@@ -131,11 +156,14 @@ door_tile = pygame.image.load("door.png")
 
 
 key = {"type":"key","image":key_image,"name":"key"}
+key_2 = {"type":"key","image":key_image,"name":"key_2"}
 
-doors = [{'room':room_1,"x":2,"y":0,"locked":True,"check":18,"key":key},{'room':room_4,"x":7,"y":5,"locked":True,"check":18,"key":None}]
+
+doors = [{'room':room_1,"x":2,"y":0,"locked":True,"check":18,"key":key},{'room':room_4,"x":7,"y":5,"locked":True,"check":18,"key":key_2}]
 
 AI_Timer_Delay = 5000
 AI_Ticks = pygame.time.get_ticks()
+Projectile_Ticks = pygame.time.get_ticks()
 Enemy_Collision_Ticks = pygame.time.get_ticks()
 
 # Initialize font
@@ -147,10 +175,13 @@ sword_m = {"type":"weapon","image":sword_image_m, "name":"mithril sword","attack
 
 meat = {"name":"Meat","type":"Food", "Value":3,"image":pygame.transform.scale(pygame.image.load("meat.png"), (tile_size, tile_size))}
 
+
 items = []
+
 items.append({'room':room_1,"x":6,"y":1,"stats":key, "name":"Key"})
 items.append({"room":room_1,"x":7,"y":1,"stats":sword,"name":"sword"})
 items.append({"room":room_2,"x":4,"y":3,"stats":sword_m,"name":"mithril sword"})
+items.append({"room":room_5,"x":5,"y":3,"stats":key_2, "name":"Great Key"})
 
 selected_item_index = 0  # Index for currently selected item
 
@@ -159,6 +190,68 @@ selected_item_index = 0  # Index for currently selected item
 sword_sound_effect = pygame.mixer.Sound("Sword_Effect.mp3")
 goblin_death_sound_effect = pygame.mixer.Sound("Goblin_Death.mp3")
 unlock_sound_effect = pygame.mixer.Sound("Door_Sound_Effect.mp3")
+punch_sound_effect = pygame.mixer.Sound("punch_sound_effect.mp3")
+
+pygame.mixer.music.load("Background_music.mp3")
+
+projectiles = []
+
+
+
+
+def handle_projectiles():
+    for i in projectiles:
+        current_x = i['x']
+        current_y = i['y']
+
+        target_x = i['target_x']
+        target_y = i['target_y']
+
+
+
+        if current_y < target_y:
+            current_y += 1
+        elif current_y > target_y:
+            current_y -= 1
+
+
+        if current_x < target_x:
+            current_x += 1
+        elif current_x > target_x:
+            current_x -= 1
+
+
+
+
+        i['x'] = current_x
+        i['y'] = current_y
+
+
+        projectile_pixel_x = i["x"] * tile_size + x_padding
+        projectile_pixel_y = i["y"] * tile_size + y_padding
+
+        print(projectile_pixel_x)
+        print(projectile_pixel_y)
+
+
+
+        screen.blit(i['image'], (projectile_pixel_x, projectile_pixel_y))
+
+
+
+
+
+def render_projectiles():
+    for i in projectiles:
+        projectile_pixel_x = i["x"] * tile_size + x_padding
+        projectile_pixel_y = i["y"] * tile_size + y_padding
+
+        screen.blit(i['image'],(projectile_pixel_x,projectile_pixel_y))
+
+
+
+
+
 
 # Function to render player stats
 def render_player_stats():
@@ -203,6 +296,42 @@ def random_loot(enemy):
 
 
 
+def check_projectiles():
+    # Iterate through the list of projectiles
+    for projectile in projectiles:
+        # Get the current position of the projectile
+        projectile_x = projectile['x']
+        projectile_y = projectile['y']
+
+        # Check for collision with the player
+        player_x = player_pos[0]
+        player_y = player_pos[1]
+
+        if projectile_x == player_x and projectile_y == player_y and projectile['source'] != "player":
+            # If there's a collision with the player, apply damage or any other effect
+            player_stats['HP'] -= projectile['damage']
+            print("Player hit! Health: ", player_stats['HP'])
+            # Remove the projectile if it hits the player
+            projectiles.remove(projectile)
+            continue
+
+        # Check for collision with enemies
+        for enemy in enemies_global:
+            enemy_x = enemy['x']
+            enemy_y = enemy['y']
+
+            if projectile_x == enemy_x and projectile_y == enemy_y and projectile['source'] != "enemy":
+                # If there's a collision with an enemy, apply damage or effect
+                enemy['stats']['health'] -= projectile['damage']
+                print(f"Enemy hit! Enemy Health: {enemy['stats']['health']}")
+                # Remove the projectile if it hits an enemy
+                projectiles.remove(projectile)
+                if enemy['stats']['health'] <= 0:
+                    enemies_global.remove(enemy)
+                break  # Exit enemy loop, projectile is destroyed
+        if projectile_x == projectile['target_x'] and projectile_y == projectile['target_y']:
+            if projectile in projectiles: projectiles.remove(projectile)
+
 
 
 def is_in_melee_range(player_x, player_y, enemy_x, enemy_y):
@@ -227,7 +356,11 @@ def attack(player_x, player_y, enemy):
             pygame.mixer.Sound.play(goblin_death_sound_effect)
             random_loot(enemy)
         print(f"Attacked enemy! Enemy's health is now {enemy['stats']['health']}")
-        pygame.mixer.Sound.play(sword_sound_effect)
+        if player_stats['Equipped Weapon'] != None:
+            pygame.mixer.Sound.play(sword_sound_effect)
+        else:
+            pygame.mixer.Sound.play(punch_sound_effect)
+
     else:
         print("Enemy is out of melee range!")
 
@@ -348,15 +481,30 @@ def enemy_ai():
             # enemy_x += random.randint(-1,1)
             # enemy_y += random.randint(-1,1)
 
-            if enemy_x < player_pos[0]:
-                enemy_x +=1
-            elif enemy_x > player_pos[0]:
-                enemy_x -=1
+            if enemy['stats'] == wright:
+                decision = random.randint(1,10)
+                if(decision < 5):
+                    projectiles.append({"x":enemy['x'],"y":enemy['y'], "target_x":player_pos[0], "target_y":player_pos[1], "image":magic_bolt_image, "damage":5,"source":"enemy"})
+                else:
+                    if enemy_x < player_pos[0]:
+                        enemy_x +=1
+                    elif enemy_x > player_pos[0]:
+                        enemy_x -=1
 
-            if enemy_y < player_pos[1]:
-                enemy_y +=1
-            elif enemy_y > player_pos[1]:
-                enemy_y -=1
+                    if enemy_y < player_pos[1]:
+                        enemy_y +=1
+                    elif enemy_y > player_pos[1]:
+                        enemy_y -=1
+            else:
+                if enemy_x < player_pos[0]:
+                    enemy_x +=1
+                elif enemy_x > player_pos[0]:
+                    enemy_x -=1
+
+                if enemy_y < player_pos[1]:
+                    enemy_y +=1
+                elif enemy_y > player_pos[1]:
+                    enemy_y -=1
 
 
 
@@ -392,6 +540,15 @@ def check_mouse_collision_detection(pos):
 
 
 
+def create_projectile(pos):
+    x = int(pos[0] / 50) - 1
+    y = int(pos[1] / 50) - 1
+
+    spawn_x = player_pos[0]
+    spawn_y = player_pos[1]
+
+    projectiles.append({"x":spawn_x,"y":spawn_y, "target_x":x, "target_y":y, "image":bolt_image, "damage":5,"source":"player"})
+
 def check_enemy_collisions():
     for enemy in enemies_global:
         if enemy['room'] == current_room:
@@ -422,8 +579,8 @@ def render_game_over():
     screen.blit(text, text_rect)  # Draw game over text
     screen.blit(restart_text, restart_rect)  # Draw restart text
     screen.blit(exit_text, exit_rect)  # Draw exit text
-    pygame.display.flip()  # Update the display
 
+    crt_shader()
     # Event loop for game over state
     game_over = True
     while game_over:
@@ -464,6 +621,10 @@ running = True
 
 render_inventory_bool = False
 
+
+pygame.mixer.music.play()
+
+
 while running:
     screen.fill(BLACK)  # Fill background with black
 
@@ -473,6 +634,9 @@ while running:
         if pygame.mouse.get_pressed()[0]:
             mouse_pos = pygame.mouse.get_pos()
             check_mouse_collision_detection(mouse_pos)
+        elif pygame.mouse.get_pressed()[2]:
+            mouse_pos = pygame.mouse.get_pos()
+            create_projectile(mouse_pos)
 
         if event.type == pygame.KEYDOWN:
             if render_inventory_bool == False :
@@ -543,23 +707,29 @@ while running:
         AI_Ticks = pygame.time.get_ticks()
 
 
+    if pygame.time.get_ticks() - Projectile_Ticks >= 150:
+        handle_projectiles()
+        Projectile_Ticks = pygame.time.get_ticks()
 
     # Render the map
     if player_stats['HP'] >= 0:
         if pygame.time.get_ticks() - Enemy_Collision_Ticks >= 500:
             check_enemy_collisions()
             Enemy_Collision_Ticks = pygame.time.get_ticks()
+
         if render_inventory_bool == False:
             render_map()
             render_enemies()
             render_items()
+            render_projectiles()
+            check_projectiles()
         else:
             render_inventory()
         render_player_stats()
     else:
         render_game_over()
 
-    pygame.display.flip()  # Update the screen
-
+    #pygame.display.flip()  # Update the screen
+    crt_shader()
 pygame.quit()
 
