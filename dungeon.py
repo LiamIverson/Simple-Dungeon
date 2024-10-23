@@ -1,4 +1,5 @@
 import pygame, random, math
+from rooms import *
 from pygame import *
 from crt_shader import Graphic_engine
 from settings import *
@@ -19,86 +20,30 @@ crt_shader =  Graphic_engine(screen)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# Room layout (1 is a wall, 0 is empty space)
-room_1 = [
-    1, 1, 2, 1, 1, 1, 1, 1, 1, 1,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 1, 1, 1, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-]
 
 
-room_2 = [
-    1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
-]
 
-room_3 = [
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 0, 0, 0, 0, 0, 0, 1, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
-]
 
-room_4 = [
-    1, 1, 1, 1, 1, 0, 1, 1, 1, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 1, 2, 1, 1,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 1, 0, 1, 1,
-]
-
-room_5 = [
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 1, 1, 1, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-]
-
-room_6 = [
-    0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
-    0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
-    0, 0, 0, 0, 0, 0, 1, 0, 1, 0,
-    1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-    1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
-    0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
-    0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
-    0, 0, 0, 0, 0, 1, 1, 0, 1, 0,
-]
+over_world_width = 4
 
 over_world = [
     "empty", room_2, "empty", "empty",
     "empty", room_1, room_3, "empty",
     "empty", room_5, room_4, "empty",
-    "empty", "empty", room_6, "empty",
+    "empty", room_7, room_6, "empty",
 ]
+
+over_world_width = 5
+
+over_world = [
+    "empty", "empty", "empty", "empty", "empty",
+    "empty", "empty", "empty", "empty", "empty",
+    "empty", "empty", "empty", "empty", "empty",
+    "empty", town, forest_2, "empty", "empty",
+    
+    start, forest_1,"empty","empty","empty",
+]
+
 
 
 
@@ -106,27 +51,31 @@ over_world = [
 
 
 #Overworld Position
-over_world_position = 5
+over_world_position = 20
 
 
 
 # Set starting room
 current_room = over_world[over_world_position]
 
-player_pos = [2, 2]
+player_pos = [2, 7]
 
 
 Sword = {"Attack": 3}
 
-player_stats = {"HP":0,"Strength":random.randint(3,18),"Dexterity":random.randint(3,18),"Intelligence":random.randint(3,18), "Inventory":[], "Equipped Weapon": None, "skills":[]}
+player_stats = {"HP":0, "MHP":0, "Strength":random.randint(3,18),"Dexterity":random.randint(3,18),"Intelligence":random.randint(3,18), "Gold":25, "Inventory":[], "Equipped Weapon": None, "skills":{}}
 
 player_stats['HP'] = player_stats['Strength'] * 3
+player_stats['MHP'] = player_stats['HP']
 
 # Size of the tile
 tile_size = 50
 
 # Load images
 wall_tile = pygame.transform.scale(pygame.image.load("dungeon_wall.png"), (tile_size, tile_size))
+building_tile = pygame.transform.scale(pygame.image.load("building.png"),(tile_size,tile_size))
+inn_tile = pygame.transform.scale(pygame.image.load("Inn_Shop.png"), (tile_size, tile_size))
+tree_tile = pygame.transform.scale(pygame.image.load("tree.png"),(tile_size,tile_size))
 player_image = pygame.transform.scale(pygame.image.load("player.png"), (tile_size, tile_size))
 key_image = pygame.transform.scale(pygame.image.load("key.png"), (tile_size, tile_size))
 sword_image = pygame.transform.scale(pygame.image.load("sword.png"), (tile_size, tile_size))
@@ -140,26 +89,26 @@ x_padding = 50
 y_padding = 50
 
 
-goblin = {"name":"Goblin","image":pygame.image.load("goblin.png"), 'health':20}
-
+goblin = {"name":"Goblin","image":pygame.image.load("goblin.png"), 'health':30}
 wright = {"name":"Wright","image":pygame.image.load("wright.png"),'health':60}
 
 enemies_global = []
 
-enemies_global.append({"room":room_1,"x":3,"y":3, "stats":goblin})
-enemies_global.append({"room":room_3,"x":3,"y":3, "stats":wright})
-enemies_global.append({"room":room_5,"x":3,"y":3, "stats":goblin})
-enemies_global.append({"room":room_5,"x":5,"y":5, "stats":goblin})
-enemies_global.append({"room":room_5,"x":2,"y":5, "stats":goblin})
+#Enemy Examples
+enemies_global.append({"room":forest_2,"x":3,"y":3, "stats":goblin})
+#enemies_global.append({"room":room_3,"x":3,"y":3, "stats":wright})
+enemies_global.append({"room":forest_2,"x":3,"y":3, "stats":goblin})
+enemies_global.append({"room":forest_2,"x":5,"y":5, "stats":goblin})
+#nemies_global.append({"room":room_5,"x":2,"y":5, "stats":goblin})
 
 door_tile = pygame.image.load("door.png")
 
 
-key = {"type":"key","image":key_image,"name":"key"}
-key_2 = {"type":"key","image":key_image,"name":"key_2"}
+#key = {"type":"key","image":key_image,"name":"key"}
+#key_2 = {"type":"key","image":key_image,"name":"key_2"}
 
-
-doors = [{'room':room_1,"x":2,"y":0,"locked":True,"check":18,"key":key},{'room':room_4,"x":7,"y":5,"locked":True,"check":18,"key":key_2}]
+doors = []
+#doors = [{'room':room_1,"x":2,"y":0,"locked":True,"check":18,"key":key},{'room':room_4,"x":7,"y":5,"locked":True,"check":18,"key":key_2}]
 
 AI_Timer_Delay = 5000
 AI_Ticks = pygame.time.get_ticks()
@@ -178,12 +127,13 @@ meat = {"name":"Meat","type":"Food", "Value":3,"image":pygame.transform.scale(py
 
 items = []
 
-items.append({'room':room_1,"x":6,"y":1,"stats":key, "name":"Key"})
-items.append({"room":room_1,"x":7,"y":1,"stats":sword,"name":"sword"})
-items.append({"room":room_2,"x":4,"y":3,"stats":sword_m,"name":"mithril sword"})
-items.append({"room":room_5,"x":5,"y":3,"stats":key_2, "name":"Great Key"})
+#items.append({'room':room_1,"x":6,"y":1,"stats":key, "name":"Key"})
+#items.append({"room":room_1,"x":7,"y":1,"stats":sword,"name":"sword"})
+items.append({"room":forest_1,"x":4,"y":3,"stats":sword_m,"name":"mithril sword"})
+#items.append({"room":room_5,"x":5,"y":3,"stats":key_2, "name":"Great Key"})
 
 selected_item_index = 0  # Index for currently selected item
+
 
 
 
@@ -196,8 +146,10 @@ pygame.mixer.music.load("Background_music.mp3")
 
 projectiles = []
 
+dialog = ""
 
-
+# Inn menu options
+inn_options = ["Sleep (10 gold)", "Leave"]
 
 def handle_projectiles():
     for i in projectiles:
@@ -259,7 +211,13 @@ def render_player_stats():
     screen.blit(stats_surface, (100, 550))  # Display near the bottom of the screen
 
 
-
+def building_logic_inn():
+    global render_building_window_bool_inn
+    if inn_options[selected_item_index] == "Leave":
+        render_building_window_bool_inn = False
+    elif inn_options[selected_item_index] == "Sleep (10 gold)":
+        if player_stats['Gold'] >= 10:
+            sleep()
 
 def check_door(door):
     return door['locked']
@@ -277,7 +235,7 @@ def unlock_door(door):
 def collision_detection(pos):
     pos_index = pos[0] + pos[1] * 10
 
-    if current_room[pos_index] == 1:
+    if current_room[pos_index] in [1, 3, 4, 5]:
         return True
     elif current_room[pos_index] == 2:
         for door in doors:
@@ -285,8 +243,13 @@ def collision_detection(pos):
                 return check_door(door)
 
 
+def sleep():
+    global render_building_window_bool_inn
 
+    render_building_window_bool_inn = False
 
+    player_stats['Gold'] -= 10
+    player_stats['HP'] = player_stats['MHP']
 
 def random_loot(enemy):
     if enemy['stats']['name'] == "Goblin":
@@ -398,6 +361,14 @@ def render_map():
             screen.blit(wall_tile, (x + x_padding, y + y_padding))
         elif current_room[i] == 2:
             screen.blit(door_tile, (x + x_padding, y + y_padding))
+        elif current_room[i] == 3:
+            screen.blit(tree_tile, (x + x_padding, y + y_padding))
+        elif current_room[i] == 4:
+            screen.blit(building_tile,(x + x_padding, y + y_padding))
+        elif current_room[i] == 5:
+            screen.blit(inn_tile,(x + x_padding, y + y_padding))
+
+
 
 
     player_pixel_x = player_pos[0] * tile_size + x_padding
@@ -455,16 +426,19 @@ def render_inventory():
     if equipped_weapon and "image" in equipped_weapon:  # Check if the equipped weapon has an image
         screen.blit(equipped_weapon["image"], (equipped_weapon_x, equipped_weapon_y + 60))  # Draw below the text
 
+    exp_text = "EXP: 0"
+    exp_text_render = font_2.render(exp_text, True, WHITE)
+    screen.blit(exp_text_render,(equipped_weapon_x, equipped_weapon_y + 90))
 
 
 
 def screen_transition(direction):
-    global over_world_position, current_room, over_world
+    global over_world_position, current_room, over_world, over_world_width
 
     if direction == "north":
-        over_world_position -= 4
+        over_world_position -= over_world_width
     elif direction == "south":
-        over_world_position += 4
+        over_world_position += over_world_width
     elif direction == "west":
         over_world_position -= 1
     elif direction =="east":
@@ -514,8 +488,17 @@ def enemy_ai():
 
 
 def check_mouse_collision_detection(pos):
+    global dialog, in_dialog,render_building_window_bool_inn
+
     x = int(pos[0] / 50) - 1
     y = int(pos[1] / 50) - 1
+
+    index = x + y * 10 
+    if current_room[index] == 3:
+        dialog = "Its a tree"
+        in_dialog = True
+    elif current_room[index] == 5:
+        render_building_window_bool_inn = True
 
     for enemy in enemies_global:
         if enemy['room'] == current_room:
@@ -560,8 +543,48 @@ def check_enemy_collisions():
 
 
 
+def render_building_window():
+    font = pygame.font.Font(None, 30)
+    font_2 = pygame.font.Font(None, 25)
+    screen.fill(BLACK)
 
+    # Define the inn menu rectangle properties
+    inn_rect = pygame.Rect(50, 50, 400, 300)  # Position and size of the inn menu box
 
+    # Draw the white border around the inn rectangle
+    pygame.draw.rect(screen, WHITE, inn_rect, 3)  # Draw border (3 pixels wide)
+
+    
+    # Render inn options
+    for index, option in enumerate(inn_options):
+        text_color = WHITE if index != selected_item_index else (255, 255, 0)  # Highlight selected option
+        text = font.render(option, True, text_color)
+        screen.blit(text, (100, 100 + index * 40))
+
+    # Display player stats or additional info if desired
+    gold_text = f"Gold: {player_stats['Gold']}"  # Assuming player_stats has a 'Gold' attribute
+    gold_render = font_2.render(gold_text, True, WHITE)
+    screen.blit(gold_render, (inn_rect.x + 20, inn_rect.bottom + 20))  # Position below the inn menu
+
+def render_dialog_window(dialog):
+    
+    dialog_width = REAL_RES[0] - 40  # Width of the dialog
+    dialog_height = 100  # Height of the dialog
+    dialog_x = (REAL_RES[0] - dialog_width) // 2  # Center horizontally
+    dialog_y = REAL_RES[1] - dialog_height - 20  # Position at the bottom with some padding
+
+    # Draw the dialog window background (black) and border (white)
+    dialog_rect = pygame.Rect(dialog_x, dialog_y, dialog_width, dialog_height)
+    pygame.draw.rect(screen, BLACK, dialog_rect)  # Background
+    pygame.draw.rect(screen, WHITE, dialog_rect, 3)  # Border with thickness of 3
+
+    # Render the text
+    font = pygame.font.Font(None, 36)  # Use a default font and set the size
+    text_surface = font.render(dialog, True, WHITE)  # Render the text in white
+    text_rect = text_surface.get_rect(center=dialog_rect.center)  # Center the text in the dialog
+
+    # Blit the text onto the dialog
+    screen.blit(text_surface, text_rect)
 
 
 def render_game_over():
@@ -620,7 +643,8 @@ def reset_game():
 running = True
 
 render_inventory_bool = False
-
+render_building_window_bool_inn = False
+in_dialog = False
 
 pygame.mixer.music.play()
 
@@ -629,9 +653,12 @@ while running:
     screen.fill(BLACK)  # Fill background with black
 
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
             running = False
-        if pygame.mouse.get_pressed()[0]:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
+            in_dialog = False
+            render_building_window_bool_inn = False 
             mouse_pos = pygame.mouse.get_pos()
             check_mouse_collision_detection(mouse_pos)
         elif pygame.mouse.get_pressed()[2]:
@@ -639,25 +666,37 @@ while running:
             create_projectile(mouse_pos)
 
         if event.type == pygame.KEYDOWN:
-            if render_inventory_bool == False :
-                if event.key == pygame.K_w:
-                    player_pos[1] -= 1
-                    if collision_detection(player_pos):
-                        player_pos[1] += 1
-                elif event.key == pygame.K_a:
-                    player_pos[0] -= 1
-                    if collision_detection(player_pos):
-                        player_pos[0] += 1
-                elif event.key == pygame.K_s:
-                    player_pos[1] += 1
-                    if collision_detection(player_pos):
+            in_dialog = False
+            if render_inventory_bool == False:
+                if render_building_window_bool_inn == False:
+                    if event.key == pygame.K_w:
                         player_pos[1] -= 1
-                elif event.key == pygame.K_d:
-                    player_pos[0] += 1
-                    if collision_detection(player_pos):
+                        if collision_detection(player_pos):
+                            player_pos[1] += 1
+                    elif event.key == pygame.K_a:
                         player_pos[0] -= 1
-                elif event.key == pygame.K_TAB:
-                    render_inventory_bool = not render_inventory_bool
+                        if collision_detection(player_pos):
+                            player_pos[0] += 1
+                    elif event.key == pygame.K_s:
+                        player_pos[1] += 1
+                        if collision_detection(player_pos):
+                            player_pos[1] -= 1
+                    elif event.key == pygame.K_d:
+                        player_pos[0] += 1
+                        if collision_detection(player_pos):
+                            player_pos[0] -= 1
+                    elif event.key == pygame.K_TAB:
+                        render_inventory_bool = not render_inventory_bool
+                else:
+                    if event.key == pygame.K_w:
+                        selected_item_index -=1 
+                    elif event.key == pygame.K_s:
+                        selected_item_index +=1
+                    elif event.key == pygame.K_TAB:
+                        render_building_window_bool_inn = False
+                    elif event.key == pygame.K_RETURN:
+                        building_logic_inn()
+
             else:
                 if event.key == pygame.K_w:
                     selected_item_index -= 1
@@ -713,19 +752,27 @@ while running:
 
     # Render the map
     if player_stats['HP'] >= 0:
-        if pygame.time.get_ticks() - Enemy_Collision_Ticks >= 500:
+        if pygame.time.get_ticks() - Enemy_Collision_Ticks >= 1000:
             check_enemy_collisions()
             Enemy_Collision_Ticks = pygame.time.get_ticks()
 
         if render_inventory_bool == False:
-            render_map()
-            render_enemies()
-            render_items()
-            render_projectiles()
-            check_projectiles()
+            if render_building_window_bool_inn == False:
+                render_map()
+                render_enemies()
+                render_items()
+                render_projectiles()
+                check_projectiles()
+            else:
+                render_building_window()
         else:
             render_inventory()
-        render_player_stats()
+
+
+        if in_dialog:
+            render_dialog_window(dialog)
+        else:
+            render_player_stats()
     else:
         render_game_over()
 
