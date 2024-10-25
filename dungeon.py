@@ -3,6 +3,7 @@ from rooms import *
 from pygame import *
 from crt_shader import Graphic_engine
 from settings import *
+from goblin import Goblin
 
 pygame.init()
 
@@ -39,9 +40,9 @@ over_world = [
     "empty", "empty", "empty", "empty", "empty",
     "empty", "empty", "empty", "empty", "empty",
     "empty", "empty", "empty", "empty", "empty",
-    "empty", town, forest_2, "empty", "empty",
+    "empty", town,   forest_2, "empty", "empty",
     
-    start, forest_1,"empty","empty","empty",
+     start, forest_1, forest_3,"empty","empty",
 ]
 
 
@@ -63,7 +64,7 @@ player_pos = [2, 7]
 
 Sword = {"Attack": 3}
 
-player_stats = {"HP":0, "MHP":0, "Strength":random.randint(3,18),"Dexterity":random.randint(3,18),"Intelligence":random.randint(3,18), "Gold":25, "Inventory":[], "Equipped Weapon": None, "skills":{}}
+player_stats = {"HP":0, "MHP":0, "Strength":random.randint(3,18),"Dexterity":random.randint(3,18),"Intelligence":random.randint(3,18), "Gold":25, "Inventory":[], "Equipped Weapon": None, "skills":{}, "exp":0}
 
 player_stats['HP'] = player_stats['Strength'] * 3
 player_stats['MHP'] = player_stats['HP']
@@ -80,6 +81,7 @@ player_image = pygame.transform.scale(pygame.image.load("player.png"), (tile_siz
 key_image = pygame.transform.scale(pygame.image.load("key.png"), (tile_size, tile_size))
 sword_image = pygame.transform.scale(pygame.image.load("sword.png"), (tile_size, tile_size))
 sword_image_m = pygame.transform.scale(pygame.image.load("sword_mithril.png"), (tile_size, tile_size))
+sword_image_r = pygame.transform.scale(pygame.image.load("sword_rune.png"), (tile_size, tile_size))
 bolt_image = pygame.transform.scale(pygame.image.load("bolt.png"),(tile_size, tile_size))
 magic_bolt_image = pygame.transform.scale(pygame.image.load("magic_bolt.png"),(tile_size, tile_size))
 
@@ -89,17 +91,16 @@ x_padding = 50
 y_padding = 50
 
 
-goblin = {"name":"Goblin","image":pygame.image.load("goblin.png"), 'health':30}
-wright = {"name":"Wright","image":pygame.image.load("wright.png"),'health':60}
+# goblin = {"name":"Goblin","image":pygame.image.load("goblin.png"), 'health':30, 'max_health':30, "exp":10}
+# goblin_2 = {"name":"Goblin","image":pygame.image.load("goblin.png"), 'health':30, 'max_health':30, "exp":10}
+# wright = {"name":"Wright","image":pygame.image.load("wright.png"),'health':60,  'max_health':60, "exp":30}
 
 enemies_global = []
 
 #Enemy Examples
-enemies_global.append({"room":forest_2,"x":3,"y":3, "stats":goblin})
-#enemies_global.append({"room":room_3,"x":3,"y":3, "stats":wright})
-enemies_global.append({"room":forest_2,"x":3,"y":3, "stats":goblin})
-enemies_global.append({"room":forest_2,"x":5,"y":5, "stats":goblin})
-#nemies_global.append({"room":room_5,"x":2,"y":5, "stats":goblin})
+enemies_global.append({"room":forest_2,"x":3,"y":3, "stats":Goblin(), "dead":False, "respawn":1})
+enemies_global.append({"room":forest_2,"x":4,"y":1, "stats":Goblin(), "dead":False, "respawn":1})
+enemies_global.append({"room":forest_2,"x":5,"y":5, "stats":Goblin(), "dead":False, "respawn":1})
 
 door_tile = pygame.image.load("door.png")
 
@@ -120,7 +121,8 @@ pygame.font.init()
 font = pygame.font.Font(None, 36)  # You can change the font size if needed
 
 sword = {"type":"weapon","image":sword_image,"name":"sword", "attack":5}
-sword_m = {"type":"weapon","image":sword_image_m, "name":"mithril sword","attack":20}
+sword_m = {"type":"weapon","image":sword_image_m, "name":"Mithril Sword","attack":10}
+sword_r = {"type":"weapon","image":sword_image_r, "name":"Rune Sword","attack":25}
 
 meat = {"name":"Meat","type":"Food", "Value":3,"image":pygame.transform.scale(pygame.image.load("meat.png"), (tile_size, tile_size))}
 
@@ -129,7 +131,8 @@ items = []
 
 #items.append({'room':room_1,"x":6,"y":1,"stats":key, "name":"Key"})
 #items.append({"room":room_1,"x":7,"y":1,"stats":sword,"name":"sword"})
-items.append({"room":forest_1,"x":4,"y":3,"stats":sword_m,"name":"mithril sword"})
+items.append({"room":forest_1,"x":4,"y":3,"stats":sword_m,"name":"Mithril Sword"})
+items.append({"room":forest_3,"x":4,"y":3,"stats":sword_r,"name":"Rune Sword"})
 #items.append({"room":room_5,"x":5,"y":3,"stats":key_2, "name":"Great Key"})
 
 selected_item_index = 0  # Index for currently selected item
@@ -149,7 +152,10 @@ projectiles = []
 dialog = ""
 
 # Inn menu options
-inn_options = ["Sleep (10 gold)", "Leave"]
+inn_options = ["Sleep (10 gold)", "Rumors","Leave"]
+
+current_day = 0
+DAY_TICKS = 0
 
 def handle_projectiles():
     for i in projectiles:
@@ -182,8 +188,6 @@ def handle_projectiles():
         projectile_pixel_x = i["x"] * tile_size + x_padding
         projectile_pixel_y = i["y"] * tile_size + y_padding
 
-        print(projectile_pixel_x)
-        print(projectile_pixel_y)
 
 
 
@@ -204,6 +208,16 @@ def render_projectiles():
 
 
 
+def day_pass():
+    global current_day, current_room, enemies_global
+
+    current_day += 1
+    for enemy in enemies_global:
+        if 'respawn' in enemy:
+            respawn_rate = enemy['respawn']
+            if current_room != enemy['room'] and enemy['stats'].health <= 0:
+                enemy['stats'].health = enemy['stats'].max_health
+                enemy['dead'] = False
 
 # Function to render player stats
 def render_player_stats():
@@ -242,6 +256,11 @@ def collision_detection(pos):
             if door['x'] == pos[0] and door['y'] == pos[1] and current_room == door['room']:
                 return check_door(door)
 
+    for enemy in enemies_global:
+        if enemy['room'] == current_room:
+            if enemy['x'] == pos[0] and enemy['y'] == pos[1] and enemy['dead'] == False:
+                return True
+
 
 def sleep():
     global render_building_window_bool_inn
@@ -252,7 +271,8 @@ def sleep():
     player_stats['HP'] = player_stats['MHP']
 
 def random_loot(enemy):
-    if enemy['stats']['name'] == "Goblin":
+    if enemy['stats'].name == "Goblin":
+        player_stats['exp'] += enemy['stats'].exp
         if random.randint(1,100) < 100:
             print(enemy['x'])
             items.append({'room':current_room,"x":enemy['x']+random.randint(-1,1),"y":enemy['y']+random.randint(-1,1),"name":"Meat", "stats":meat})
@@ -289,8 +309,8 @@ def check_projectiles():
                 print(f"Enemy hit! Enemy Health: {enemy['stats']['health']}")
                 # Remove the projectile if it hits an enemy
                 projectiles.remove(projectile)
-                if enemy['stats']['health'] <= 0:
-                    enemies_global.remove(enemy)
+                # if enemy['stats']['health'] <= 0:
+                #     enemies_global.remove(enemy)
                 break  # Exit enemy loop, projectile is destroyed
         if projectile_x == projectile['target_x'] and projectile_y == projectile['target_y']:
             if projectile in projectiles: projectiles.remove(projectile)
@@ -312,13 +332,14 @@ def attack(player_x, player_y, enemy):
         damage = random.randint(1, round(player_stats['Strength'] / 3 )) + round(player_stats["Strength"] / 4)
         if player_stats['Equipped Weapon'] != None:
             damage += player_stats['Equipped Weapon']['attack']
-        enemy['stats']['health'] -= damage
+        enemy['stats'].health -= damage
         
-        if enemy['stats']['health'] <= 0:
-            enemies_global.remove(enemy)
+        if enemy['stats'].health <= 0 and enemy['dead'] != True:
+            # enemies_global.remove(enemy)
+            enemy['dead'] = True
             pygame.mixer.Sound.play(goblin_death_sound_effect)
             random_loot(enemy)
-        print(f"Attacked enemy! Enemy's health is now {enemy['stats']['health']}")
+        print(f"Attacked enemy! Enemy's health is now {enemy['stats'].health}")
         if player_stats['Equipped Weapon'] != None:
             pygame.mixer.Sound.play(sword_sound_effect)
         else:
@@ -331,10 +352,10 @@ def attack(player_x, player_y, enemy):
 # Render enemies in the current room
 def render_enemies():
     for enemy in enemies_global:
-        if enemy["room"] == current_room:  # Only render enemies in the current room
+        if enemy["room"] == current_room and enemy['dead'] == False:  # Only render enemies in the current room
             enemy_pixel_x = enemy["x"] * tile_size + x_padding
             enemy_pixel_y = enemy["y"] * tile_size + y_padding
-            screen.blit(enemy["stats"]["image"], (enemy_pixel_x, enemy_pixel_y))
+            screen.blit(enemy["stats"].image, (enemy_pixel_x, enemy_pixel_y))
 
 
 
@@ -426,9 +447,9 @@ def render_inventory():
     if equipped_weapon and "image" in equipped_weapon:  # Check if the equipped weapon has an image
         screen.blit(equipped_weapon["image"], (equipped_weapon_x, equipped_weapon_y + 60))  # Draw below the text
 
-    exp_text = "EXP: 0"
+    exp_text = "EXP: " + str(player_stats['exp'])
     exp_text_render = font_2.render(exp_text, True, WHITE)
-    screen.blit(exp_text_render,(equipped_weapon_x, equipped_weapon_y + 90))
+    screen.blit(exp_text_render,(equipped_weapon_x, equipped_weapon_y + 120))
 
 
 
@@ -448,14 +469,14 @@ def screen_transition(direction):
 
 def enemy_ai():
     for enemy in enemies_global:
-        if enemy['room'] == current_room:
+        if enemy['room'] == current_room and enemy['dead'] == False:
             enemy_x = enemy['x']
             enemy_y = enemy['y']
 
             # enemy_x += random.randint(-1,1)
             # enemy_y += random.randint(-1,1)
 
-            if enemy['stats'] == wright:
+            if enemy['stats'].name == "wright":
                 decision = random.randint(1,10)
                 if(decision < 5):
                     projectiles.append({"x":enemy['x'],"y":enemy['y'], "target_x":player_pos[0], "target_y":player_pos[1], "image":magic_bolt_image, "damage":5,"source":"enemy"})
@@ -494,10 +515,10 @@ def check_mouse_collision_detection(pos):
     y = int(pos[1] / 50) - 1
 
     index = x + y * 10 
-    if current_room[index] == 3:
+    if current_room[index] == 3 and is_in_melee_range(player_pos[0],player_pos[1],x,y):
         dialog = "Its a tree"
         in_dialog = True
-    elif current_room[index] == 5:
+    elif current_room[index] == 5 and is_in_melee_range(player_pos[0],player_pos[1],x,y):
         render_building_window_bool_inn = True
 
     for enemy in enemies_global:
@@ -534,12 +555,10 @@ def create_projectile(pos):
 
 def check_enemy_collisions():
     for enemy in enemies_global:
-        if enemy['room'] == current_room:
+        if enemy['room'] == current_room and enemy['dead'] == False:
             if enemy['x'] == player_pos[0] and enemy['y'] == player_pos[1]:
-                if enemy['stats'] == goblin:
+                if enemy['stats'].name == "Goblin":
                     player_stats['HP'] -= random.randint(3,5)
-                if enemy['stats'] == wright:
-                    player_stats['HP'] -= random.randint(10,15)
 
 
 
@@ -749,6 +768,9 @@ while running:
     if pygame.time.get_ticks() - Projectile_Ticks >= 150:
         handle_projectiles()
         Projectile_Ticks = pygame.time.get_ticks()
+    if pygame.time.get_ticks() - DAY_TICKS >= 10000:
+        day_pass()
+        DAY_TICKS = pygame.time.get_ticks()
 
     # Render the map
     if player_stats['HP'] >= 0:

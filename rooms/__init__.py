@@ -9,3 +9,4 @@ from .start_location import start
 from .town import town
 from .forest_1 import forest_1
 from .forest_2 import forest_2
+from .forest_3 import forest_3
